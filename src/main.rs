@@ -125,34 +125,55 @@ async fn main() {
                         return Ok(());
                     }
 
-                    match DateTime::parse_rfc3339_str(args[1]) {
-                        Ok(date) => {
-                            match database_service.get_day_stats(date).await {
-                                Ok(day) => {
-                                    let stats_message = format!(
-                                        "📊 Статистика за {}:\n\n\
-                                        За опоздание: {} голосов\n\
-                                        Против опоздания: {} голосов\n\n\
-                                        Всего проголосовало: {} человек",
-                                        args[1],
-                                        day.votes_yes.len(),
-                                        day.votes_no.len(),
-                                        day.votes_yes.len() + day.votes_no.len()
-                                    );
-                                    bot.send_message(msg.chat.id, stats_message).await?;
-                                }
-                                Err(_) => {
-                                    bot.send_message(
-                                        msg.chat.id,
-                                        "❌ Документ за указанную дату не найден"
-                                    ).await?;
-                                }
-                            }
+                    // Парсим дату в формате YYYY-MM-DD
+                    let date_parts: Vec<&str> = args[1].split('-').collect();
+                    if date_parts.len() != 3 {
+                        bot.send_message(
+                            msg.chat.id,
+                            "❌ Неверный формат даты. Используйте YYYY-MM-DD"
+                        ).await?;
+                        return Ok(());
+                    }
+
+                    let year = date_parts[0].parse::<i32>().unwrap_or(0);
+                    let month = date_parts[1].parse::<u8>().unwrap_or(0);
+                    let day = date_parts[2].parse::<u8>().unwrap_or(0);
+
+                    if year == 0 || month == 0 || day == 0 {
+                        bot.send_message(
+                            msg.chat.id,
+                            "❌ Неверный формат даты. Используйте YYYY-MM-DD"
+                        ).await?;
+                        return Ok(());
+                    }
+
+                    // Создаем DateTime на начало указанного дня
+                    let date = DateTime::from_millis(
+                        chrono::NaiveDate::from_ymd_opt(year as i32, month as u32, day as u32)
+                            .unwrap_or_else(|| chrono::NaiveDate::from_ymd(1970, 1, 1))
+                            .and_hms_opt(0, 0, 0)
+                            .unwrap()
+                            .timestamp_millis()
+                    );
+
+                    match database_service.get_day_stats(date).await {
+                        Ok(day) => {
+                            let stats_message = format!(
+                                "📊 Статистика за {}:\n\n\
+                                За опоздание: {} голосов\n\
+                                Против опоздания: {} голосов\n\n\
+                                Всего проголосовало: {} человек",
+                                args[1],
+                                day.votes_yes.len(),
+                                day.votes_no.len(),
+                                day.votes_yes.len() + day.votes_no.len()
+                            );
+                            bot.send_message(msg.chat.id, stats_message).await?;
                         }
                         Err(_) => {
                             bot.send_message(
                                 msg.chat.id,
-                                "❌ Неверный формат даты. Используйте YYYY-MM-DD"
+                                "❌ Документ за указанную дату не найден"
                             ).await?;
                         }
                     }
