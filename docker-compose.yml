@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    environment:
+      - TELOXIDE_TOKEN=${TELOXIDE_TOKEN}
+      - LATE_TARGET_NAME=${LATE_TARGET_NAME:-Поверинов}
+    depends_on:
+      - mongodb
+    networks:
+      - latebot-network
+
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - latebot-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  latebot-network:
+    driver: bridge 
