@@ -6,6 +6,7 @@ services:
     environment:
       - TELOXIDE_TOKEN=${TELOXIDE_TOKEN}
       - LATE_TARGET_NAME=${LATE_TARGET_NAME:-Поверинов}
+      - NOTIFICATION_CHAT_ID=${NOTIFICATION_CHAT_ID:-0}
     depends_on:
       - mongodb
     networks:

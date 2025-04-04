@@ -94,4 +94,13 @@ impl DatabaseServiceInner {
             )))
         }
     }
+
+    pub async fn get_total_late_days(&self) -> Result<i32, mongodb::error::Error> {
+        let filter = doc! {
+            "votes_yes": { "$exists": true, "$ne": [] }
+        };
+        
+        let count = self.collection.count_documents(filter, None).await?;
+        Ok(count as i32)
+    }
 }

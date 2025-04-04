@@ -28,6 +28,7 @@ async fn main() {
 
     // Получаем имя из переменной окружения или используем значение по умолчанию
     let target_name = env::var("LATE_TARGET_NAME").unwrap_or_else(|_| "Поверинов".to_string());
+    let notification_chat_id = env::var("NOTIFICATION_CHAT_ID").unwrap_or_else(|_| "0".to_string()).parse::<i64>().unwrap_or(0);
 
 
     let database_service = database_actions::DatabaseServiceInner::new("mongodb://10.10.10.10:27017/").await;
@@ -68,6 +69,18 @@ async fn main() {
                                 msg.chat.id,
                                 format!("✅ Ваш голос {} успешно зарегистрирован!", vote_type)
                             ).await?;
+
+                            // Проверяем количество опозданий, если голос был за опоздание
+                            if is_late {
+                                if let Ok(total_late_days) = database_service.get_total_late_days().await {
+                                    if total_late_days % 5 == 0 && notification_chat_id != 0 {
+                                        bot.send_message(
+                                            ChatId(notification_chat_id),
+                                            format!("🎉 {} достиг {} опозданий! 🎉", target_name, total_late_days)
+                                        ).await?;
+                                    }
+                                }
+                            }
                         }
                         Err(e) => {
                             log::error!("Ошибка при голосовании: {}", e);
