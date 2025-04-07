@@ -29,6 +29,7 @@ async fn main() {
     // Получаем имя из переменной окружения или используем значение по умолчанию
     let target_name = env::var("LATE_TARGET_NAME").unwrap_or_else(|_| "Поверинов".to_string());
     let notification_chat_id = env::var("NOTIFICATION_CHAT_ID").unwrap_or_else(|_| "0".to_string()).parse::<i64>().unwrap_or(0);
+    let ping_user = env::var("PING_USER").unwrap_or_else(|_| "@Test".to_string());
 
 
     let database_service = database_actions::DatabaseServiceInner::new("mongodb://10.10.10.10:27017/").await;
@@ -37,8 +38,14 @@ async fn main() {
 
     let bot = Bot::from_env();
 
+    
+
+
+//     return;
+
     teloxide::repl(bot, move |bot: Bot, msg: Message| {
         let target_name = target_name.clone();
+        let ping_user = ping_user.clone();
         let database_service = database_service.clone();
         async move {
             match msg.text() {
@@ -50,7 +57,8 @@ async fn main() {
                         Команды:\n\
                         /late - голосовать за опоздание\n\
                         /unlate - голосовать против опоздания\n\
-                        /stats - посмотреть статистику\n\n\
+                        /stats - посмотреть статистику\n\
+                        /get_chat_id - получить ID текущего чата\n\n\
                         ⚠️ Голосовать можно только один раз в день!", target_name)
                     ).await?;
                 }
@@ -72,11 +80,11 @@ async fn main() {
 
                             // Проверяем количество опозданий, если голос был за опоздание
                             if is_late {
-                                if let Ok(total_late_days) = database_service.get_total_late_days().await {
-                                    if total_late_days % 5 == 0 && notification_chat_id != 0 {
+                                if let Ok(total_late_days) = database_service.check_today_document().await {
+                                    if total_late_days.votes_yes.len() % 5 == 0 && notification_chat_id != 0 {
                                         bot.send_message(
                                             ChatId(notification_chat_id),
-                                            format!("🎉 {} достиг {} опозданий! 🎉", target_name, total_late_days)
+                                            format!("🎉 {} Человек сообщили, что {}({}) опоздал! 🎉🎉🎉🎉🎉 Давайте его поздравим! 🎉🎉🎉🎉🎉 ", total_late_days.votes_yes.len(),  target_name,ping_user,)
                                         ).await?;
                                     }
                                 }
@@ -191,10 +199,16 @@ async fn main() {
                         }
                     }
                 }
+                Some("/get_chat_id") => {
+                    bot.send_message(
+                        msg.chat.id,
+                        format!("ID этого чата: {}", msg.chat.id)
+                    ).await?;
+                }
                 _ => {
                     bot.send_message(
                         msg.chat.id,
-                        "Используйте /start для информации, /late для голосования за опоздание, /unlate для голосования против, /stats для статистики за сегодня или /stats_day YYYY-MM-DD для статистики за конкретный день"
+                        "Используйте /start для информации, /late для голосования за опоздание, /unlate для голосования против, /stats для статистики за сегодня, /stats_day YYYY-MM-DD для статистики за конкретный день или /get_chat_id для получения ID чата"
                     ).await?;
                 }
             }
