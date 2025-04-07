@@ -124,15 +124,28 @@ async fn message_handler(
                     "⚠️ Вы сегодня еще не голосовали"
                 };
 
+                let votes_yes = today_document.votes_yes.len();
+                let votes_no = today_document.votes_no.len();
+                
+                let result_position = if votes_yes > votes_no {
+                    "🟢 Сейчас побеждает позиция: ОПОЗДАЛ"
+                } else if votes_no > votes_yes {
+                    "🔴 Сейчас побеждает позиция: НЕ ОПОЗДАЛ"
+                } else {
+                    "🟡 Сейчас ничья в голосовании"
+                };
+
                 let stats_message = format!(
                     "📊 Статистика за сегодня:\n\n\
                     За опоздание: {} голосов\n\
                     Против опоздания: {} голосов\n\n\
-                    Всего проголосовало: {} человек\n\n\
+                    Всего проголосовало: {} человек\n\
+                    {}\n\n\
                     {}",
-                    today_document.votes_yes.len(),
-                    today_document.votes_no.len(),
-                    today_document.votes_yes.len() + today_document.votes_no.len(),
+                    votes_yes,
+                    votes_no,
+                    votes_yes + votes_no,
+                    result_position,
                     user_vote
                 );
                 
@@ -199,15 +212,28 @@ async fn handle_callback(bot: Bot, q: CallbackQuery, database_service: DatabaseS
                         "⚠️ Вы сегодня еще не голосовали"
                     };
 
+                    let votes_yes = today_document.votes_yes.len();
+                    let votes_no = today_document.votes_no.len();
+                    
+                    let result_position = if votes_yes > votes_no {
+                        "🟢 Сейчас побеждает позиция: ОПОЗДАЛ"
+                    } else if votes_no > votes_yes {
+                        "🔴 Сейчас побеждает позиция: НЕ ОПОЗДАЛ"
+                    } else {
+                        "🟡 Сейчас ничья в голосовании"
+                    };
+
                     let stats_message = format!(
                         "📊 Статистика за сегодня:\n\n\
                         За опоздание: {} голосов\n\
                         Против опоздания: {} голосов\n\n\
-                        Всего проголосовало: {} человек\n\n\
+                        Всего проголосовало: {} человек\n\
+                        {}\n\n\
                         {}",
-                        today_document.votes_yes.len(),
-                        today_document.votes_no.len(),
-                        today_document.votes_yes.len() + today_document.votes_no.len(),
+                        votes_yes,
+                        votes_no,
+                        votes_yes + votes_no,
+                        result_position,
                         user_vote
                     );
                     
