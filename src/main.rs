@@ -54,6 +54,16 @@ async fn message_handler(
 ) -> Result<(), RequestError> {
     match msg.text() {
         Some("/start") => {
+            let keyboard = InlineKeyboardMarkup::new(vec![
+                vec![
+                    InlineKeyboardButton::callback("✅ Опоздал", "late"),
+                    InlineKeyboardButton::callback("❌ Не опоздал", "unlate")
+                ],
+                vec![
+                    InlineKeyboardButton::callback("📊 Статистика", "stats")
+                ]
+            ]);
+
             bot.send_message(
                 msg.chat.id,
                 format!("👋 Добро пожаловать в бот учета опозданий!\n\n\
@@ -64,7 +74,9 @@ async fn message_handler(
                 /stats - посмотреть статистику\n\
                 /get_chat_id - получить ID текущего чата\n\n\
                 ⚠️ Голосовать можно только один раз в день!", target_name)
-            ).await?;
+            )
+            .reply_markup(keyboard)
+            .await?;
         }
         Some("/late") | Some("/unlate") => {
             let user_id = msg.from().unwrap().id;
@@ -145,22 +157,61 @@ async fn message_handler(
 
 async fn handle_callback(bot: Bot, q: CallbackQuery, database_service: DatabaseService) -> Result<(), RequestError> {
     if let Some(data) = q.data {
-        let user_id = q.from.id.0 as i64;
-        let is_late = data == "late";
-        
-        match database_service.vote(user_id, is_late).await {
-            Ok(_) => {
-                let vote_type = if is_late { "за опоздание" } else { "против опоздания" };
-                bot.answer_callback_query(q.id)
-                    .text(format!("✅ Ваш голос {} успешно зарегистрирован!", vote_type))
-                    .await?;
+        match data.as_str() {
+            "late" | "unlate" => {
+                let user_id = q.from.id.0 as i64;
+                let is_late = data == "late";
+                
+                match database_service.vote(user_id, is_late).await {
+                    Ok(_) => {
+                        let vote_type = if is_late { "за опоздание" } else { "против опоздания" };
+                        bot.answer_callback_query(q.id)
+                            .text(format!("✅ Ваш голос {} успешно зарегистрирован!", vote_type))
+                            .await?;
+                    }
+                    Err(e) => {
+                        log::error!("Ошибка при голосовании: {}", e);
+                        bot.answer_callback_query(q.id)
+                            .text("❌ Произошла ошибка при регистрации голоса. Пожалуйста, попробуйте позже.")
+                            .await?;
+                    }
+                }
             }
-            Err(e) => {
-                log::error!("Ошибка при голосовании: {}", e);
-                bot.answer_callback_query(q.id)
-                    .text("❌ Произошла ошибка при регистрации голоса. Пожалуйста, попробуйте позже.")
-                    .await?;
+            "stats" => {
+                if let Ok(today_document) = database_service.check_today_document().await {
+                    let stats_message = format!(
+                        "📊 Статистика за сегодня:\n\n\
+                        За опоздание: {} голосов\n\
+                        Против опоздания: {} голосов\n\n\
+                        Всего проголосовало: {} человек",
+                        today_document.votes_yes.len(),
+                        today_document.votes_no.len(),
+                        today_document.votes_yes.len() + today_document.votes_no.len()
+                    );
+                    
+                    let keyboard = InlineKeyboardMarkup::new(vec![
+                        vec![
+                            InlineKeyboardButton::callback("✅ Опоздал", "late"),
+                            InlineKeyboardButton::callback("❌ Не опоздал", "unlate")
+                        ]
+                    ]);
+                    
+                    bot.answer_callback_query(q.id).await?;
+                    
+                    if let Some(message) = q.message {
+                        let chat = message.chat();
+                        bot.send_message(chat.id, stats_message)
+                            .reply_markup(keyboard)
+                            .await?;
+                        
+                    }
+                } else {
+                    bot.answer_callback_query(q.id)
+                        .text("❌ Произошла ошибка при получении статистики. Пожалуйста, попробуйте позже.")
+                        .await?;
+                }
             }
+            _ => {}
         }
     }
     Ok(())
