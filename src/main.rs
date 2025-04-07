@@ -115,14 +115,25 @@ async fn message_handler(
         }
         Some("/stats") => {
             if let Ok(today_document) = database_service.check_today_document().await {
+                let user_id = msg.from().unwrap().id.0 as i64;
+                let user_vote = if today_document.votes_yes.contains(&user_id) {
+                    "✅ Вы сегодня голосовали ЗА опоздание"
+                } else if today_document.votes_no.contains(&user_id) {
+                    "❌ Вы сегодня голосовали ПРОТИВ опоздания"
+                } else {
+                    "⚠️ Вы сегодня еще не голосовали"
+                };
+
                 let stats_message = format!(
                     "📊 Статистика за сегодня:\n\n\
                     За опоздание: {} голосов\n\
                     Против опоздания: {} голосов\n\n\
-                    Всего проголосовало: {} человек",
+                    Всего проголосовало: {} человек\n\n\
+                    {}",
                     today_document.votes_yes.len(),
                     today_document.votes_no.len(),
-                    today_document.votes_yes.len() + today_document.votes_no.len()
+                    today_document.votes_yes.len() + today_document.votes_no.len(),
+                    user_vote
                 );
                 
                 let keyboard = InlineKeyboardMarkup::new(vec![
@@ -179,14 +190,25 @@ async fn handle_callback(bot: Bot, q: CallbackQuery, database_service: DatabaseS
             }
             "stats" => {
                 if let Ok(today_document) = database_service.check_today_document().await {
+                    let user_id = q.from.id.0 as i64;
+                    let user_vote = if today_document.votes_yes.contains(&user_id) {
+                        "✅ Вы сегодня голосовали ЗА опоздание"
+                    } else if today_document.votes_no.contains(&user_id) {
+                        "❌ Вы сегодня голосовали ПРОТИВ опоздания"
+                    } else {
+                        "⚠️ Вы сегодня еще не голосовали"
+                    };
+
                     let stats_message = format!(
                         "📊 Статистика за сегодня:\n\n\
                         За опоздание: {} голосов\n\
                         Против опоздания: {} голосов\n\n\
-                        Всего проголосовало: {} человек",
+                        Всего проголосовало: {} человек\n\n\
+                        {}",
                         today_document.votes_yes.len(),
                         today_document.votes_no.len(),
-                        today_document.votes_yes.len() + today_document.votes_no.len()
+                        today_document.votes_yes.len() + today_document.votes_no.len(),
+                        user_vote
                     );
                     
                     let keyboard = InlineKeyboardMarkup::new(vec![
