@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{env, sync::Arc};
 use teloxide::prelude::*;
 
+pub mod console;
 pub mod database_actions;
 pub mod handlers;
 pub mod securiy;
@@ -21,12 +22,15 @@ async fn main() {
         .parse::<i64>()
         .unwrap_or(0);
     let ping_user = env::var("PING_USER").unwrap_or_else(|_| "@Test".to_string());
+    
+    // Start console interface
+    console::start_console_interface().await;
 
-    // Initialize security manager 
+    // Initialize security manager
     let security_config = BotSecurityConfig {
         request_limit: 1,
-        time_window_seconds: 10, 
-        ddos_protection_enabled: true
+        time_window_seconds: 10,
+        ddos_protection_enabled: true,
     };
 
     log::info!(
@@ -91,12 +95,12 @@ async fn main() {
                 if !security_manager.handle_request(user_id).await {
                     // If rate limit exceeded, answer the callback query with an error message
                     let id = q.id.as_str();
-                        let _ = bot
-                            .answer_callback_query(id)
-                            .text("⚠️ Слишком много запросов. Пожалуйста, попробуйте позже.")
-                            .show_alert(true)
-                            .await;
-                    
+                    let _ = bot
+                        .answer_callback_query(id)
+                        .text("⚠️ Слишком много запросов. Пожалуйста, попробуйте позже.")
+                        .show_alert(true)
+                        .await;
+
                     return Ok(());
                 }
 
