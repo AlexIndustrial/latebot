@@ -1,0 +1,15 @@
+{
+  "bot": {
+    "target_name": "Не указан",
+    "notification_chat_id": 0,
+    "ping_user": "@Test"
+  },
+  "database": {
+    "connection_uri": "mongodb://10.10.10.10:27017/"
+  },
+  "security": {
+    "request_limit": 1,
+    "time_window_seconds": 10,
+    "ddos_protection_enabled": true
+  }
+}

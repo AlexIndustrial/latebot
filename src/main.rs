@@ -1,37 +1,35 @@
 use database_actions::DatabaseService;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
-use std::{env, sync::Arc};
+use std::sync::Arc;
 use teloxide::prelude::*;
 
+pub mod config;
 pub mod console;
 pub mod database_actions;
 pub mod handlers;
 pub mod securiy;
 
-use securiy::{config::BotSecurityConfig, manager::SecurityManager};
+use config::Config;
+use securiy::manager::SecurityManager;
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
     log::info!("Starting late tracking bot...");
 
-    let target_name = env::var("LATE_TARGET_NAME").unwrap_or_else(|_| "Не указан".to_string());
-    let notification_chat_id = env::var("NOTIFICATION_CHAT_ID")
-        .unwrap_or_else(|_| "0".to_string())
-        .parse::<i64>()
-        .unwrap_or(0);
-    let ping_user = env::var("PING_USER").unwrap_or_else(|_| "@Test".to_string());
+    // Load configuration from config.json
+    let config = Config::load_or_default("config.json");
+    
+    let target_name = config.bot.target_name;
+    let notification_chat_id = config.bot.notification_chat_id;
+    let ping_user = config.bot.ping_user;
     
     // Start console interface
     console::start_console_interface().await;
 
     // Initialize security manager
-    let security_config = BotSecurityConfig {
-        request_limit: 1,
-        time_window_seconds: 10,
-        ddos_protection_enabled: true,
-    };
+    let security_config = config.security;
 
     log::info!(
         "Initializing security manager with rate limit: {} requests per {} seconds",
@@ -41,7 +39,7 @@ async fn main() {
     let security_manager = Arc::new(SecurityManager::new(security_config).await);
 
     let database_service =
-        database_actions::DatabaseServiceInner::new("mongodb://10.10.10.10:27017/").await;
+        database_actions::DatabaseServiceInner::new(&config.database.connection_uri).await;
     let bot = Bot::from_env();
 
     let handler = dptree::entry()

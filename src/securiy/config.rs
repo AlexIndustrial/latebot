@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Copy)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
 pub struct BotSecurityConfig {
     /// Maximum number of requests allowed within the time window
     pub request_limit: u32,
