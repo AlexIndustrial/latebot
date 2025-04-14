@@ -59,27 +59,28 @@ impl SecurityManager {
             last_reset_time: now,
         });
         
-        // Clean up old timestamps (older than 1 minute)
-        let one_minute_ago = now - Duration::from_secs(60);
+        // Clean up old timestamps (older than the configured time window)
+        let time_window = Duration::from_secs(self.config.time_window_seconds as u64);
+        let window_start = now - time_window;
         
-        // If it's been more than a minute since the last reset, reset the timestamps
-        if user_info.last_reset_time <= one_minute_ago {
+        // If it's been more than the time window since the last reset, reset the timestamps
+        if user_info.last_reset_time <= window_start {
             user_info.request_timestamps.clear();
             user_info.last_reset_time = now;
         } else {
-            // Otherwise, just remove timestamps older than a minute
-            user_info.request_timestamps.retain(|&timestamp| timestamp > one_minute_ago);
+            // Otherwise, just remove timestamps older than the time window
+            user_info.request_timestamps.retain(|&timestamp| timestamp > window_start);
         }
         
         // Check if the user has exceeded the rate limit
-        if user_info.request_timestamps.len() >= self.config.requests_per_minute_limit as usize {
+        if user_info.request_timestamps.len() >= self.config.request_limit as usize {
             // If rate limit exceeded, calculate how long to wait
             if let Some(oldest_timestamp) = user_info.request_timestamps.first() {
-                let time_to_wait = Duration::from_secs(60) - (now - *oldest_timestamp);
+                let time_to_wait = time_window - (now - *oldest_timestamp);
                 return CheckResult::Block(time_to_wait);
             }
             // Fallback in case the vector is empty (shouldn't happen)
-            return CheckResult::Block(Duration::from_secs(60));
+            return CheckResult::Block(time_window);
         }
         
         // Record this request

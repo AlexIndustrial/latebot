@@ -22,15 +22,17 @@ async fn main() {
         .unwrap_or(0);
     let ping_user = env::var("PING_USER").unwrap_or_else(|_| "@Test".to_string());
 
-    // Initialize security manager with default config or load from environment
+    // Initialize security manager 
     let security_config = BotSecurityConfig {
-        requests_per_minute_limit: 1,// Default to 30 requests per minute
+        request_limit: 1,
+        time_window_seconds: 10, 
         ddos_protection_enabled: true
     };
 
     log::info!(
-        "Initializing security manager with rate limit: {} requests per minute",
-        security_config.requests_per_minute_limit
+        "Initializing security manager with rate limit: {} requests per {} seconds",
+        security_config.request_limit,
+        security_config.time_window_seconds
     );
     let security_manager = Arc::new(SecurityManager::new(security_config).await);
 
