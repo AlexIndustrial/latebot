@@ -6,6 +6,7 @@ use teloxide::prelude::*;
 
 pub mod database_actions;
 pub mod handlers;
+pub mod securiy;
 
 #[tokio::main]
 async fn main() {
@@ -25,13 +26,12 @@ async fn main() {
 
     let handler = dptree::entry()
         .branch(Update::filter_message().endpoint(
-            |
-            bot: Bot,
-            msg: Message,
-            target_name: String,
-            ping_user: String,
-            database_service: DatabaseService,
-            notification_chat_id: i64| {
+            |bot: Bot,
+             msg: Message,
+             target_name: String,
+             ping_user: String,
+             database_service: DatabaseService,
+             notification_chat_id: i64| {
                 handlers::message_handler(
                     bot,
                     msg,
