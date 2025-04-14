@@ -1,6 +1,6 @@
 use teloxide::{
     prelude::*,
-    types::{InlineKeyboardButton, InlineKeyboardMarkup},
+    types::{InlineKeyboardButton, InlineKeyboardMarkup, MessageEntityKind},
     RequestError,
 };
 
@@ -34,7 +34,9 @@ pub async fn message_handler(
                 /late - голосовать за опоздание\n\
                 /unlate - голосовать против опоздания\n\
                 /stats - посмотреть статистику\n\
-                /get_chat_id - получить ID текущего чата\n\n\
+                /get_chat_id - получить ID текущего чата\n\
+                /get_user_id @username - информация о получении ID пользователя\n\
+                /my_id - получить свой ID\n\n\
                 ⚠️ Голосовать можно только один раз в день!",
                     target_name
                 ),
@@ -146,10 +148,20 @@ pub async fn message_handler(
             bot.send_message(msg.chat.id, format!("ID этого чата: {}", msg.chat.id))
                 .await?;
         }
+        Some("/my_id") => {
+            if let Some(user) = &msg.from {
+                bot.send_message(
+                    msg.chat.id,
+                    format!("Ваш ID: {}", user.id.0)
+                ).await?;
+            } else {
+                bot.send_message(msg.chat.id, "Не удалось определить ваш ID").await?;
+            }
+        }
         _ => {
             bot.send_message(
                 msg.chat.id,
-                "Используйте /start для информации, /late для голосования за опоздание, /unlate для голосования против, /stats для статистики за сегодня, /stats_day YYYY-MM-DD для статистики за конкретный день или /get_chat_id для получения ID чата"
+                "Используйте /start для информации, /late для голосования за опоздание, /unlate для голосования против, /stats для статистики за сегодня, /get_chat_id для получения ID чата, /my_id для получения своего ID"
             ).await?;
         }
     }

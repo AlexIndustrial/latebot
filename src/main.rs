@@ -54,7 +54,7 @@ async fn main() {
              notification_chat_id: i64,
              security_manager: Arc<SecurityManager>| async move {
                 // Get user ID for rate limiting
-                if let Some(user) = msg.from() {
+                if let Some(user) = &msg.from {
                     let user_id = user.id.0 as i64;
 
                     // Check if the request is allowed by the rate limiter
