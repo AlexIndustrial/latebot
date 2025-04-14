@@ -49,6 +49,11 @@ impl SecurityManager {
         if !self.config.ddos_protection_enabled {
             return CheckResult::Pass;
         }
+        
+        // If the user is in the whitelist, always allow the request
+        if self.config.whitelist.contains(&user_id) {
+            return CheckResult::Pass;
+        }
 
         let now = Instant::now();
         let mut request_map = self.request_map.lock().await;
