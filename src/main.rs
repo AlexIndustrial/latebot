@@ -1,6 +1,7 @@
-use std::env;
+use database_actions::DatabaseService;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
+use std::env;
 use teloxide::prelude::*;
 
 pub mod database_actions;
@@ -11,7 +12,7 @@ async fn main() {
     pretty_env_logger::init();
     log::info!("Starting late tracking bot...");
 
-    let target_name = env::var("LATE_TARGET_NAME").unwrap_or_else(|_| "Поверинов".to_string());
+    let target_name = env::var("LATE_TARGET_NAME").unwrap_or_else(|_| "Не указан".to_string());
     let notification_chat_id = env::var("NOTIFICATION_CHAT_ID")
         .unwrap_or_else(|_| "0".to_string())
         .parse::<i64>()
@@ -23,8 +24,29 @@ async fn main() {
     let bot = Bot::from_env();
 
     let handler = dptree::entry()
-        .branch(Update::filter_message().endpoint(handlers::message_handler))
-        .branch(Update::filter_callback_query().endpoint(handlers::handle_callback));
+        .branch(Update::filter_message().endpoint(
+            |
+            bot: Bot,
+            msg: Message,
+            target_name: String,
+            ping_user: String,
+            database_service: DatabaseService,
+            notification_chat_id: i64| {
+                handlers::message_handler(
+                    bot,
+                    msg,
+                    target_name,
+                    ping_user,
+                    database_service,
+                    notification_chat_id,
+                )
+            },
+        ))
+        .branch(Update::filter_callback_query().endpoint(
+            |bot: Bot, q: CallbackQuery, database_service: DatabaseService| {
+                handlers::handle_callback(bot, q, database_service)
+            },
+        ));
 
     Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![
