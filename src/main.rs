@@ -63,6 +63,7 @@ async fn main() {
                 // Get user ID for rate limiting
                 if let Some(user) = &msg.from {
                     let user_id = user.id.0 as i64;
+                    log::info!("Text request from user: {}", user_id);
 
                     // Check if the request is allowed by the rate limiter
                     if !security_manager.handle_request(user_id).await {
@@ -94,9 +95,12 @@ async fn main() {
              q: CallbackQuery,
              database_service: DatabaseService,
              security_manager: Arc<SecurityManager>| async move {
+                
                 // Get user ID for rate limiting
                 let user = q.from.id;
                 let user_id = user.0 as i64;
+
+                log::info!("Callback request from user: {}", user_id);
 
                 // Check if the request is allowed by the rate limiter
                 if !security_manager.handle_request(user_id).await {
