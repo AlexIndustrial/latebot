@@ -15,7 +15,16 @@ use securiy::manager::SecurityManager;
 
 #[tokio::main]
 async fn main() {
-    pretty_env_logger::init();
+    use flexi_logger::{Logger, Duplicate, FileSpec};
+    use chrono::Local;
+    let now = Local::now();
+    let logfile_name = format!("latebot-{}", now.format("%Y-%m-%d_%H-%M-%S"));
+    Logger::try_with_str("info")
+        .unwrap()
+        .log_to_file(FileSpec::default().directory(".").basename(&logfile_name).suppress_timestamp())
+        .duplicate_to_stdout(Duplicate::Info)
+        .start()
+        .unwrap();
     log::info!("Starting late tracking bot...");
 
     // Load configuration from config.json
