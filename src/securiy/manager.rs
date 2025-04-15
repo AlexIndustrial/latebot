@@ -49,7 +49,10 @@ impl SecurityManager {
         if !self.config.ddos_protection_enabled {
             return CheckResult::Pass;
         }
-        
+        // If the user is in the blacklist, always block the request
+        if self.config.blacklist.contains(&user_id) {
+            return CheckResult::Block(Duration::MAX);
+        }
         // If the user is in the whitelist, always allow the request
         if self.config.whitelist.contains(&user_id) {
             return CheckResult::Pass;

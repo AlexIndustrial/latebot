@@ -8,8 +8,10 @@
     "connection_uri": "mongodb://10.10.10.10:27017/"
   },
   "security": {
-    "request_limit": 1,
-    "time_window_seconds": 10,
-    "ddos_protection_enabled": true
+    "request_limit": 30,
+    "time_window_seconds": 60,
+    "ddos_protection_enabled": true,
+    "whitelist": [123456789],
+    "blacklist": [987654321, 123]
   }
 }

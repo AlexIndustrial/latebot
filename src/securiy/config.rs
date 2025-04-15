@@ -10,6 +10,8 @@ pub struct BotSecurityConfig {
     pub ddos_protection_enabled: bool,
     /// List of user IDs that are whitelisted (exempt from rate limiting)
     pub whitelist: Vec<i64>,
+    /// List of user IDs that are blacklisted (requests are always blocked)
+    pub blacklist: Vec<i64>,
 }
 
 impl Default for BotSecurityConfig {
@@ -19,6 +21,7 @@ impl Default for BotSecurityConfig {
             time_window_seconds: 60, // Default time window of 60 seconds (1 minute)
             ddos_protection_enabled: true,
             whitelist: Vec::new(), // Empty whitelist by default
+            blacklist: Vec::new(), // Empty blacklist by default
         }
     }
 }
