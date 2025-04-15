@@ -11,7 +11,7 @@
     "request_limit": 30,
     "time_window_seconds": 60,
     "ddos_protection_enabled": true,
-    "whitelist": [123456789],
-    "blacklist": [987654321, 123]
+    "whitelist": [123],
+    "blacklist": [123]
   }
 }
